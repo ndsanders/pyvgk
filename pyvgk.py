@@ -17,9 +17,9 @@ Examples
 import sys
 from pathlib import PurePath
 from subprocess import Popen, PIPE, TimeoutExpired
+import logging
 
 __all__ = ["vgk, vgkcon"]
-__version__ = "1.0"
 
 VGK_EXE = "vgk.exe"
 VGKCON_EXE = "vgkcon.exe"
@@ -28,28 +28,30 @@ ENCODING = "utf-8"
 
 def vgk(filename, timeout=5, dir_="."):
     """
-    Run vkg.exe as a subprocess.
+    Run ``vkg.exe`` as a subprocess.
 
     Parameters
     ----------
     filename : str
-        Filename WITH the *.sir extension.
+        Filename _with_ the ``*.sir`` extension.
     timeout : float, optional
-        The number of seconds to wait before the subprocess times out. By
-        default the timeout is 5 seconds.
+        The number of seconds to wait before the subprocess times out. The
+        default is to wait for 5 seconds.
     dir_ : str, optional
-        The directory in which vgk.exe is located. By default it is in the
+        The directory in which ``vgk.exe`` is located. By default it is in the
         current working directory.
 
     Returns
     -------
     int
-        Return-code from the vgk.exe subprocess. 0 indicates a successful
-        completion.
+        Return-code from the ``vgk.exe`` subprocess. 0 indicates a successful
+        completion; anything else is considered failure.
     str
-        Errors from the vgk.exe subprocess. ``NoneType`` if no errors occured.
+        Errors from the ``vgk.exe`` subprocess. ``NoneType`` if no errors
+        occured.
     """
     vgk_exe = str(PurePath(dir_, VGK_EXE))
+    logging.debug(f"vgk_exe := {vgk_exe}")
 
     # Run vgk with the given arguments.
     filename = (filename + "\n").encode(ENCODING)
@@ -64,45 +66,47 @@ def vgk(filename, timeout=5, dir_="."):
             )
             proc.kill()
             sys.exit(1)
-        finally:
-            return proc.returncode, errs.decode(ENCODING).strip()
+
+        return proc.returncode, errs.decode(ENCODING).strip()
 
 
 def vgkcon(*args, timeout=5, dir_="."):
     """
-    Run vgkcon.exe with the arguments.
+    Run ``vgkcon.exe`` with the arguments.
 
     Parameters
     ----------
     *args
         Arbitrary number of arguments to pass to vgkcon.exe. Note that these
-        must be in the correct order and format accepted by vgkcon.exe.
+        must be in the correct order and format accepted by ``vgkcon.exe``.
     timeout : float, optional
-        The number of seconds to wait before the subprocess times out. By
-        default the timeout is 5 seconds.
+        The number of seconds to wait before the subprocess times out. The
+        default is to wait for 5 seconds.
     dir_ : str, optional
-        The directory in which vgk.exe is located. By default it is in the
+        The directory in which ``vgk.exe`` is located. By default it is in the
         current working directory.
 
     Returns
     -------
     int
-        Return-code for the vgkcon subprocess. 0 indicates a successful
-        completion.
+        Return-code for the ``vgkcon.exe`` subprocess. 0 indicates a successful
+        completion; anything else is considered failure.
     str
-        Errors from the vgkcon.exe subprocess. ``NoneType`` if no errors
+        Errors from the ``vgkcon.exe`` subprocess. ``NoneType`` if no errors
         occured.
 
     Notes
     -----
-    The vgkcon.exe will save its output to the same directory.
+    The ``vgkcon.exe`` will save its output to the directory in which it
+    exists.
     """
     vgkcon_exe = str(PurePath(dir_, VGKCON_EXE))
+    logging.debug(f"vgkcon_exe := {vgkcon_exe}")
     
     # Build the argument string from `args`.
     args = "\n".join(map(str, args)) + "\n"
     args = args.encode(ENCODING)
-    print("`vgkcon.exe` arguments:", args)  # TODO(ns354) Delete this print().
+    logging.debug(f"args := {args}")
     
     # Run vgk with the given arguments.
     with Popen([vgkcon_exe], stdout=PIPE, stdin=PIPE, stderr=PIPE) as proc:
@@ -110,8 +114,8 @@ def vgkcon(*args, timeout=5, dir_="."):
             __, errs = proc.communicate(args, timeout=timeout)
         except TimeoutExpired as err:
             print(
-                "TimeoutExpired: communication with {} has timed out after {} "
-                "seconds.".format(vgkcon_exe, timeout),
+                f"TimeoutExpired: communication with {vgkcon_exe} has timed "
+                f"out after {timeout} seconds.",
                 file=sys.stderr
             )
             proc.kill()
