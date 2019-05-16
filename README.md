@@ -1,4 +1,4 @@
-# PyvVGK
+# PyVGK
 Python wrapper for a Windows installation of VGK.
 
 ## Example use
